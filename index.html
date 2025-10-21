@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubTrack - Simple Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .app-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .app-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stats-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .amount, .count {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .btn-add {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .subscriptions-list {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .subscription-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .subscription-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .subscription-card h4 {
+            font-size: 1.1rem;
+        }
+        
+        .subscription-cost {
+            background: #3b82f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .subscription-meta {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+        
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background: white;
+            color: #333;
+            margin: 20% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>💰 SubTrack</h1>
+            <p>Manage Your Subscriptions</p>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard">
+            <div class="stats-card">
+                <h3>Monthly Cost</h3>
+                <div class="amount" id="monthlyTotal">$0.00</div>
+            </div>
+            <div class="stats-card">
+                <h3>Subscriptions</h3>
+                <div class="count" id="subscriptionCount">0</div>
+            </div>
+        </div>
+
+        <!-- Add Subscription Button -->
+        <button class="btn-add" onclick="openAddModal()">+ Add Subscription</button>
+
+        <!-- Subscriptions List -->
+        <div class="subscriptions-list">
+            <div id="subscriptionsContainer">
+                <div class="empty-state">
+                    <p>No subscriptions yet. Add your first one!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Subscription Modal -->
+        <div id="addModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Subscription</h3>
+                    <button class="close-btn" onclick="closeAddModal()">×</button>
+                </div>
+                <form id="subscriptionForm">
+                    <div class="form-group">
+                        <input type="text" id="subName" placeholder="Service Name (Netflix, Spotify)" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="subPrice" placeholder="Price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="subFrequency" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <select id="subCategory" required>
+                            <option value="streaming">Streaming</option>
+                            <option value="music">Music</option>
+                            <option value="software">Software</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Subscription</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple Subscription Manager - GUARANTEED WORKING
+        let subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+        
+        // Initialize the app
+        function init() {
+            console.log('🚀 SubTrack initialized!');
+            renderSubscriptions();
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            // Form submission
+            document.getElementById('subscriptionForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addSubscription();
+            });
+            
+            // Close modal when clicking outside
+            document.getElementById('addModal').addEventListener('click', function(e) {
+                if (e.target.id === 'addModal') {
+                    closeAddModal();
+                }
+            });
+        }
+        
+        function openAddModal() {
+            console.log('Opening modal...');
+            document.getElementById('addModal').style.display = 'block';
+        }
+        
+        function closeAddModal() {
+            console.log('Closing modal...');
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('subscriptionForm').reset();
+        }
+        
+        function addSubscription() {
+            const name = document.getElementById('subName').value.trim();
+            const price = parseFloat(document.getElementById('subPrice').value);
+            const frequency = document.getElementById('subFrequency').value;
+            const category = document.getElementById('subCategory').value;
+            
+            if (!name || isNaN(price) || price <= 0) {
+                alert('Please fill all fields correctly');
+                return;
+            }
+            
+            const subscription = {
+                id: Date.now().toString(),
+                name: name,
+                price: price,
+                frequency: frequency,
+                category: category,
+                addedDate: new Date().toISOString()
+            };
+            
+            subscriptions.push(subscription);
+            saveSubscriptions();
+            renderSubscriptions();
+            closeAddModal();
+            
+            alert(`✅ Added ${name} successfully!`);
+        }
+        
+        function deleteSubscription(id) {
+            const subscription = subscriptions.find(sub => sub.id === id);
+            
+            if (subscription && confirm(`Delete ${subscription.name}?`)) {
+                subscriptions = subscriptions.filter(sub => sub.id !== id);
+                saveSubscriptions();
+                renderSubscriptions();
+                alert(`🗑️ Deleted ${subscription.name}`);
+            }
+        }
+        
+        function calculateMonthlyCost(subscription) {
+            return subscription.frequency === 'yearly' ? subscription.price / 12 : subscription.price;
+        }
+        
+        function getTotalMonthly() {
+            return subscriptions.reduce((total, sub) => total + calculateMonthlyCost(sub), 0);
+        }
+        
+        function renderSubscriptions() {
+            const container = document.getElementById('subscriptionsContainer');
+            const monthlyTotal = document.getElementById('monthlyTotal');
+            const subscriptionCount = document.getElementById('subscriptionCount');
+            
+            // Update stats
+            monthlyTotal.textContent = '$' + getTotalMonthly().toFixed(2);
+            subscriptionCount.textContent = subscriptions.length;
+            
+            // Render subscriptions
+            if (subscriptions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No subscriptions yet. Add your first one!</p></div>';
+                return;
+            }
+            
+            container.innerHTML = subscriptions.map(sub => `
+                <div class="subscription-card">
+                    <div class="subscription-header">
+                        <h4>${sub.name}</h4>
+                        <span class="subscription-cost">$${calculateMonthlyCost(sub).toFixed(2)}/mo</span>
+                    </div>
+                    <p class="subscription-meta">${sub.category} • ${sub.frequency} billing</p>
+                    <button class="btn-delete" onclick="deleteSubscription('${sub.id}')">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function saveSubscriptions() {
+            localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+        }
+        
+        // Start the app when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
